@@ -83,3 +83,14 @@ function context(fleet,hero){
   assert.equal(hits,1);assert(poses>0);assert.equal(ctx.updateEquipmentPose(person,dt),false);
  }
 }
+{ // Las sombras omiten piezas pequeñas y bajan su frecuencia solo con carga.
+ const mesh=(name,radius,small)=>({name,smallDetail:small,isEnabled:()=>true,isVisible:true,visibility:1,isDisposed:()=>false,getTotalVertices:()=>10,
+  getBoundingInfo:()=>({boundingSphere:{radiusWorld:radius,centerWorld:{x:0,y:0,z:0}}})});
+ const map={};
+ const ctx={shadow:{getShadowMap:()=>map},homeMode:false,driving:false,state:{speed:0},quality:"medium",stage42:{},stage35:{controller:{ratio:1}},
+  player:{root:{position:{x:0,z:0}}},scene:{meshes:[mesh("carro",2),mesh("manija",.1),mesh("ojo",.3,true)]}};
+ ctx.current=null;vm.createContext(ctx);vm.runInContext(fs.readFileSync(path.join(__dirname,"../game/src/rendering/0396-shadow-list42.js"),"utf8"),ctx);
+ ctx.shadowList42();assert.equal(map.renderList.map(m=>m.name).join(),"carro");assert.equal(map.refreshRate,1);
+ ctx.stage35.controller.ratio=.7;ctx.shadowList42();assert.equal(map.refreshRate,2);
+ ctx.current={root:ctx.player.root};ctx.driving=true;ctx.state.speed=20;ctx.shadowList42();assert.equal(map.refreshRate,1);
+}

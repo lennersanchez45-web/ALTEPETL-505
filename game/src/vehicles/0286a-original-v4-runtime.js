@@ -142,7 +142,10 @@ const originalV4=(()=>{
   visual.rotation.y=Math.PI;
   for(const node of instance.rootNodes)node.parent=visual;
   const nearMeshes=root.getChildMeshes();
-  for(const mesh of nearMeshes){mesh.isPickable=false;mesh.receiveShadows=true;}
+  for(const mesh of nearMeshes){
+   mesh.isPickable=false;mesh.receiveShadows=true;
+   if(/eyes|eyebrows|tira_/i.test(mesh.name))cullDetail(mesh,18);
+  }
   const helmet={setEnabled(){},isEnabled(){return false;}};
   const p={index,hero,human:true,bodyType:hero?0:1,root,visual,hips:visual,helmet,
     nearMeshes,lodMeshes:[],streetProps:[],clips:{},bindTracks:[],phase:0,blend:0,speed:0,wait:0,
@@ -155,6 +158,12 @@ const originalV4=(()=>{
   if(!animationSync)animationSync=scene.onBeforeAnimationsObservable.add(syncAnimations);
   return p;
  }
+ // Una pieza pequeña ocupa pocos píxeles de lejos y su sombra casi no se ve,
+ // pero cuesta una orden de dibujo en cada pasada.
+ function cullDetail(mesh,distance){
+  mesh.smallDetail=true;
+  mesh.addLODLevel?.(distance,null);
+ }
  function makeCar(requested,x,z,heading=0,id=0){
   const name=requested;
   if(!FLEET.includes(name))throw Error('Modelo antiguo no permitido: '+name);
@@ -166,6 +175,12 @@ const originalV4=(()=>{
   for(const node of instance.rootNodes)node.parent=visual;
   for(const mesh of root.getChildMeshes()){mesh.isPickable=false;mesh.receiveShadows=true;}
   root.position.set(x,groundAt(x,z),z);root.rotation.y=heading;
+  for(const mesh of root.getChildMeshes()){
+   if(!mesh.getTotalVertices?.())continue;
+   mesh.computeWorldMatrix(true);
+   const radius=mesh.getBoundingInfo().boundingSphere.radiusWorld;
+   if(radius<.6)cullDetail(mesh,Math.max(18,radius*170));
+  }
   const [width,length,wheelbase,mass,maxSpeed]=SIZES[name],bike=info.type==="moto";
   const steering=new B.TransformNode("steering_v4_"+id,scene);
   steering.parent=root;
