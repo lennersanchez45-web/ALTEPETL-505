@@ -8,7 +8,7 @@ const car=(id,x,z)=>({name:"hilux",id,streamV4:true,traffic:true,root:node(x,z),
 function context(fleet,hero){
  const ctx={fleet,player:{root:node(...hero)},current:null,driving:false,traffic23:{cars:[]},pedestrians:[],
   inWorld:()=>true,blocked:()=>false,roadSurface50:()=>0,updateTrafficSignals23(){},originalV4:{animateWheels(){}},
-  clamp:(x,a,b)=>Math.max(a,Math.min(b,x))};
+  clamp:(x,a,b)=>Math.max(a,Math.min(b,x)),phase:"green",trafficPhase28(){return ctx.phase;}};
  vm.createContext(ctx);vm.runInContext(read("0369-step-fleet13.js"),ctx);return ctx;
 }
 { // Sentidos opuestos usan carriles distintos, siempre a la derecha.
@@ -33,6 +33,20 @@ function context(fleet,hero){
  for(let i=0;i<30;i++)ctx.stepFleet13(1/30);
  assert(front.root.position.z>5.5,"El de adelante debe avanzar");
 }
+{ // Se detiene antes del cruce en rojo y avanza en verde, en ambos sentidos.
+ for(const axis of ["x","z"])for(const target of [1,-1]){
+  const v=car(0,0,0);v.route={axis,target,lane:0};
+  const ctx=context([v],[80,80]);v.route.lane=ctx.trafficLaneV4(axis,37,target);
+  v.heading=axis==="x"?-target*Math.PI/2:(target>0?Math.PI:0);
+  const start=37-target*30;
+  v.root.position.set(axis==="x"?start:v.route.lane,0,axis==="z"?start:v.route.lane);
+  const front=()=>(37-v.root.position[axis])*target-v.length/2;
+  ctx.phase="red";for(let i=0;i<600;i++)ctx.stepFleet13(1/60);
+  assert(front()>7.8&&front()<9.2,"Debe parar en la línea: "+front());
+  ctx.phase="green";for(let i=0;i<180;i++)ctx.stepFleet13(1/60);
+  assert(front()<4,"Debe cruzar en verde: "+front());
+ }
+}
 { // Las animaciones de personajes ocultos se detienen y se reanudan.
  let before;
  const group=name=>({name:"originalV4_1_"+name,from:0,to:30,isPlaying:false,start(){this.isPlaying=true;},stop(){this.isPlaying=false;}});
@@ -55,4 +69,17 @@ function context(fleet,hero){
   p.root.on=true;before();assert(walk.isPlaying&&!idle.isPlaying);
   console.log("V4_TRAFFIC_AND_ANIMATION_OK");
  })().catch(e=>{console.error(e);process.exit(1);});
+}
+{ // El golpe avanza, impacta una sola vez (incluso con cuadros lentos) y libera la caminata.
+ for(const dt of [1/60,.5]){
+  let hits=0,poses=0;
+  const ctx={actionTimer:0,equipped:"hands",lastAction:0,time:0,gameplayTime:20,playing:true,driving:false,city:{state:{}},
+   expansion29:{combat:{lastHand:"r"}},stage38:{hitEvents:0},Combat29:{strike:()=>true},toast(){},startAudio(){},tone(){},V:()=>({}),
+   clamp:(x,a,b)=>Math.max(a,Math.min(b,x)),cityHitActor(){hits++;},originalV4:{setClip(){},stopLoop(){},seekClip(){poses++;}},updateEquipmentPose(){},cityPunch(){}};
+  vm.createContext(ctx);vm.runInContext(fs.readFileSync(path.join(__dirname,"../game/src/engine/0264-install-combat38.js"),"utf8"),ctx);
+  ctx.installCombat38();ctx.cityPunch();
+  const person={root:{rotation:{y:0},position:{}}};
+  for(let i=0;i<90;i++)ctx.updateEquipmentPose(person,dt);
+  assert.equal(hits,1);assert(poses>0);assert.equal(ctx.updateEquipmentPose(person,dt),false);
+ }
 }

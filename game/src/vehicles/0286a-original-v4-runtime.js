@@ -125,6 +125,12 @@ const originalV4=(()=>{
   if(!g._v4Ready){g.start(false,1,g.from,g.to);g.pause();g._v4Ready=true;}
   g.goToFrame(g.from+(g.to-g.from)*Math.max(0,Math.min(1,phase)));return true;
  }
+
+ // Antes de fijar una pose, detener el clip en bucle para que no compitan.
+ function stopLoop(p){
+  const q=p?.v4;if(!q?.playing)return;
+  q.playing.stop();q.playing=null;q.active=null;
+ }
  function makePerson(index,hero=false){
   const id=hero?CAST[0]:CAST[1+((Math.max(1,index)-1)%9)];
   const pack=people.get(id);if(!pack)throw Error("Personajes V4 sin preparar");
@@ -191,7 +197,7 @@ const originalV4=(()=>{
   p.v4.active=null;setClip(p,"Idle");
   return true;
  }
- return Object.freeze({exists,spec,prepare,makePerson,makeCar,setClip,seekClip,animateWheels,restorePerson,
+ return Object.freeze({exists,spec,prepare,makePerson,makeCar,setClip,seekClip,stopLoop,animateWheels,restorePerson,
   inspect(){return {enabled:exists(),people:people.size,vehicles:cars.size,legacyLoaded:0,
    originalWorldPreserved:true};}});
 })();

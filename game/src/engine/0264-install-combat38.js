@@ -1,27 +1,28 @@
 // Pelea con las acciones que trae Mateo, sin interpolar huesos del rig eliminado.
 function installCombat38(){
- const previous=updateEquipmentPose;
+ // El bucle de dibujo la llama a pie; true = el combate controla el esqueleto.
  updateEquipmentPose=function(person,dt){
-  if(equipped!=='hands')return previous(person,dt);
-  updateReload();
+  const punching=actionTimer>0;
   actionTimer=Math.max(0,actionTimer-dt);
+  if(equipped!=='hands')return false;
   if(city.state.block){
    originalV4.setClip(person,'Guard',true);
-   return;
+   return true;
   }
-  if(actionTimer>0){
-   const progress=clamp(1-actionTimer/.50,0,1);
-   const clip=expansion29.combat.lastHand==='l'?'Punch_L':'Punch_R';
-   originalV4.seekClip(person,clip,progress);
-   const strike=stage38.strike;
-   if(strike&&!strike.hit&&progress>=.40){
-    strike.hit=true;
-    const dir=V(-Math.sin(person.root.rotation.y),0,-Math.cos(person.root.rotation.y));
-    cityHitActor(person.root.position,dir,false,1.25,25);
-    stage38.hitEvents++;
-    startAudio();tone(100,40,.08,.07,'triangle');
-   }
-  }else originalV4.setClip(person,'Idle',true);
+  if(!punching)return false;
+  const progress=clamp(1-actionTimer/.50,0,1);
+  const clip=expansion29.combat.lastHand==='l'?'Punch_L':'Punch_R';
+  originalV4.stopLoop(person);
+  originalV4.seekClip(person,clip,progress);
+  const strike=stage38.strike;
+  if(strike&&!strike.hit&&progress>=.40){
+   strike.hit=true;
+   const dir=V(-Math.sin(person.root.rotation.y),0,-Math.cos(person.root.rotation.y));
+   cityHitActor(person.root.position,dir,false,1.25,25);
+   stage38.hitEvents++;
+   startAudio();tone(100,40,.08,.07,'triangle');
+  }
+  return true;
  };
  cityPunch=function(){
   if(!playing||driving||gameplayTime-(city.lastPunch||-10)<.55)return;

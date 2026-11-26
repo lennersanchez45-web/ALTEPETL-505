@@ -3,6 +3,26 @@ function trafficLaneV4(axis,center,direction){
  return center+(axis==='z'?-direction:direction)*2.8;
 }
 
+// Velocidad máxima para detenerse antes de un semáforo en amarillo o rojo.
+function signalLimitV4(v){
+ const {axis,lane,target}=v.route,center=lane-trafficLaneV4(axis,0,target);
+ const coord=axis==='x'?v.root.position.x:v.root.position.z;
+ let limit=Infinity;
+ for(const c of [-111,-37,37,111]){
+  // 8,5 m antes del centro del cruce, medidos desde el frente.
+  const gap=(c-coord)*target-v.length*.5-8.5;
+  if(gap<-.6||gap>12)continue;
+  // El paso a desnivel no se cruza a nivel.
+  if(typeof overpass50!=='undefined'&&overpass50.installed&&
+   (axis==='z'&&center===37&&c===-37||axis==='x'&&center===-37&&c===37))continue;
+  const phase=trafficPhase28(axis,c,center);
+  // En amarillo, quien ya está encima de la línea termina de cruzar.
+  if(phase==='green'||phase==='yellow'&&gap<2)continue;
+  limit=Math.min(limit,gap<.15?0:gap*1.2);
+ }
+ return limit;
+}
+
 // Tráfico V4: un número fijo de GLB sigue al jugador por las calles reales.
 // Reutilizar las 18 instancias conserva texturas, animaciones y RAM en Android.
 let trafficStreamClockV4=0;
@@ -94,8 +114,9 @@ function stepFleet13(dt){
    (other.root.position.x-pos.x)*dx+(other.root.position.z-pos.z)*dz>0&&
    Math.hypot(other.root.position.x-aheadX,other.root.position.z-aheadZ)<(v.length+other.length)*.5);
   const safe=clear&&!nearby&&!onFoot&&!occupied&&Math.abs(turn)<.3;
-  const target=safe?(v.bike?5.5:v.caponera?3.6:4.8):0;
-  v.trafficSpeed+=(target-v.trafficSpeed)*(1-Math.exp(-dt*(safe?2.2:10)));
+  const signal=signalLimitV4(v);
+  const target=safe?Math.min(v.bike?5.5:v.caponera?3.6:4.8,signal):0;
+  v.trafficSpeed+=(target-v.trafficSpeed)*(1-Math.exp(-dt*(target<v.trafficSpeed?10:2.2)));
   const nx=pos.x+dx*v.trafficSpeed*dt,nz=pos.z+dz*v.trafficSpeed*dt;
   if(onFoot)v.trafficSpeed=0;
   if(!onFoot&&inWorld(nx,nz)&&!blocked(nx,nz,v.width*.45,v,true)){
@@ -103,8 +124,8 @@ function stepFleet13(dt){
   }else v.trafficSpeed=0;
   pos.y=roadSurface50(pos.x,pos.z,!!v.overpass50);
   // Un atasco sin salida se recicla, pero solo lejos del jugador.
-  v.stuckV4=v.trafficSpeed<.15&&!nearby&&!onFoot?(v.stuckV4||0)+dt:0;
-  if(v.streamV4&&v.stuckV4>8&&Math.hypot(pos.x-hero.x,pos.z-hero.z)>60){v.streamV4NeedsPlace=true;v.stuckV4=0;}
+  v.stuckV4=v.trafficSpeed<.15&&!nearby&&!onFoot&&signal>=1?(v.stuckV4||0)+dt:0;
+  if(v.streamV4&&v.stuckV4>30&&Math.hypot(pos.x-hero.x,pos.z-hero.z)>60){v.streamV4NeedsPlace=true;v.stuckV4=0;}
   v.root.rotation.y=v.heading;
   originalV4.animateWheels(v,v.trafficSpeed,turn,dt);
  }
