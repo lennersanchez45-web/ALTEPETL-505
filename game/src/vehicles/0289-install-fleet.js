@@ -20,11 +20,12 @@ async function installFleet(){
  for(let i=0;i<18;i++){
   const id=classes[i%classes.length],axis=i%3===0?'x':'z';
   const center=centers[(Math.floor(i/2)+i)%centers.length];
-  const lane=center+(i%2?2.8:-2.8),along=levels[(i*5)%levels.length];
+  const target=i%2?1:-1,lane=trafficLaneV4(axis,center,target),along=levels[(i*5)%levels.length];
   const x=axis==='x'?along:lane,z=axis==='z'?along:lane;
-  const v=createVehicle(id,x,z,0,number++);
+  const heading=axis==='x'?-target*Math.PI/2:(target>0?Math.PI:0);
+  const v=createVehicle(id,x,z,heading,number++);
   v.traffic=true;v.streamV4=true;v.retired28=false;v.trafficSpeed=0;
-  v.route={axis,lane,min:-210,max:230,target:i%2?1:-1};
+  v.route={axis,lane,min:-210,max:230,target};
   if(!inWorld(x,z)||blocked(x,z,v.width*.52,v,true)){
    v.root.position.set(1800+i*7,0,1800);
    v.streamV4NeedsPlace=true;

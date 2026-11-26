@@ -12,6 +12,17 @@ const originalV4=(()=>{
   pulsar:[.76,2.02,1.37,160,31],taypan:[.76,2,1.33,135,25],
   "mototaxi-roja":[1.42,2.45,1.83,440,15],"canonera-abierta":[1.42,2.52,1.83,460,15]
  };
+ // Instancias humanas creadas. Las ocultas no deben seguir evaluando huesos.
+ const actors=new Set();let animationSync=null;
+ function startClip(p){const q=p.v4,g=q.playing;g.start(q.repeat,q.speed,g.from,g.to,false);q.suspended=false;}
+ function syncAnimations(){
+  for(const p of actors){
+   const q=p.v4;if(!q.playing)continue;
+   const visible=p.root.isEnabled();
+   if(!visible&&!q.suspended){q.playing.stop();q.suspended=true;}
+   else if(visible&&q.suspended)startClip(p);
+  }
+ }
  let metadata=null,people=new Map(),cars=new Map(),loadedPeople=false,loadedCars=false;
  const exists=()=>!!document.getElementById("v4-original-specifications");
  function requireModels(){if(!exists())throw Error("Faltan los 16 modelos V4 en la compilación: generar HTML con scripts/build_full_original_v4.py");}
@@ -103,7 +114,9 @@ const originalV4=(()=>{
   if(p.v4.active===name)return true;
   if(p.v4.playing)p.v4.playing.stop();
   p.v4.active=name;p.v4.playing=group;p.mode=name;
-  group.start(repeat,speed,group.from,group.to,false);
+  p.v4.repeat=repeat;p.v4.speed=speed;
+  // Un personaje oculto solo recuerda el clip; arranca al volver a verse.
+  if(p.root?.isEnabled?.()===false)p.v4.suspended=true;else startClip(p);
   return true;
  }
  function seekClip(p,name,phase){
@@ -132,6 +145,8 @@ const originalV4=(()=>{
   for(const [name,g] of groups)p.clips[name]={from:g.from,to:g.to,duration:(g.to-g.from)/30||1,tracks:[]};
   p.contact=contactShadow("Sombra persona V4 "+index,.65,.55);
   setClip(p,"Idle");
+  actors.add(p);
+  if(!animationSync)animationSync=scene.onBeforeAnimationsObservable.add(syncAnimations);
   return p;
  }
  function makeCar(requested,x,z,heading=0,id=0){
