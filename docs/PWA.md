@@ -13,7 +13,7 @@ El juego no fue convertido en un APK nativo: se sigue ejecutando mediante el mot
 1. En el repositorio, ve a **Settings → Pages → Build and deployment**.
 2. Selecciona **Source: GitHub Actions**.
 3. Una vez fusionados los cambios a `main`, el workflow **Publicar Nagua City PWA** construye el juego optimizado y publica el sitio mediante `actions/deploy-pages`.
-4. Consulta el enlace publicado en **Actions → Publicar Nagua City PWA → Publicar aplicación web**. La URL habitual, si no tienes dominio propio, será `https://kankwj5-eng.github.io/Nagua-City/`, **pero no estará disponible hasta publicar correctamente**.
+4. Consulta el enlace publicado en **Actions → Publicar Nagua City PWA → Publicar aplicación web**. La URL habitual, si no tienes dominio propio, será `https://lennersanchez45-web.github.io/ALTEPETL-505/`, **pero no estará disponible hasta publicar correctamente**.
 
 Si Pages todavía no está habilitado, la acción de publicación puede fallar hasta activar **Source: GitHub Actions**. La rama del PR solo ejecuta construcción y pruebas, no publica.
 

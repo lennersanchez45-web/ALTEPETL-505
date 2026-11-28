@@ -58,7 +58,7 @@ La versión PWA añade una portada ligera en español, un botón **Instalar app*
 
 - [Guía de instalación y despliegue en GitHub Pages](docs/PWA.md).
 - [Workflow de publicación](.github/workflows/pages-pwa.yml).
-- Sitio tras publicar y habilitar Pages: `https://kankwj5-eng.github.io/Nagua-City/`.
+- Sitio tras publicar y habilitar Pages: `https://lennersanchez45-web.github.io/ALTEPETL-505/`.
 
 
 ## Código fuente organizado por sistemas
