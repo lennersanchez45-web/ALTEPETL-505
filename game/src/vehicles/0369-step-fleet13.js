@@ -23,6 +23,23 @@ function signalLimitV4(v){
  return limit;
 }
 
+// El vehículo del jugador ya no atraviesa a los peatones: se apartan.
+function clearPedestriansV4(v){
+ if(Math.abs(state.speed)<.3)return;
+ const c=Math.cos(state.heading),s=Math.sin(state.heading),width=v.width/2+.35,length=v.length/2+.45;
+ for(const q of pedestrians){
+  if(q.downUntil||q.trafficRider26||!q.root.isEnabled())continue;
+  const p=q.root.position,dx=p.x-state.x,dz=p.z-state.z;
+  const side=c*dx-s*dz,front=s*dx+c*dz;
+  if(Math.abs(side)>=width||Math.abs(front)>=length||Math.abs(p.y-v.root.position.y)>2)continue;
+  for(const direction of side<0?[-1,1]:[1,-1]){
+   const out=direction*(width+.1),x=state.x+c*out+s*front,z=state.z-s*out+c*front;
+   if(blocked(x,z,.25,v,false))continue;
+   p.x=x;p.z=z;q.fleeUntil=gameplayTime+5;break;
+  }
+ }
+}
+
 // Tráfico V4: un número fijo de GLB sigue al jugador por las calles reales.
 // Reutilizar las 18 instancias conserva texturas, animaciones y RAM en Android.
 let trafficStreamClockV4=0;
@@ -87,6 +104,7 @@ function streamTrafficV4(dt){
 }
 
 function stepFleet13(dt){
+ if(driving&&current)clearPedestriansV4(current);
  updateTrafficSignals23(dt);
  if(!(dt>0))return;
  streamTrafficV4(dt);

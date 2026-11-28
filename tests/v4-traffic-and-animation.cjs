@@ -94,3 +94,23 @@ function context(fleet,hero){
  ctx.stage35.controller.ratio=.7;ctx.shadowList42();assert.equal(map.refreshRate,2);
  ctx.current={root:ctx.player.root};ctx.driving=true;ctx.state.speed=20;ctx.shadowList42();assert.equal(map.refreshRate,1);
 }
+{ // Atrapado dentro de un vehículo se puede salir; una pared sigue frenando.
+ const ctx={blocked:(x,z,r,ignore,vehicles=true)=>x>=2||vehicles&&Math.abs(x)<1};
+ vm.createContext(ctx);vm.runInContext(fs.readFileSync(path.join(__dirname,"../game/src/core/0052-slide.js"),"utf8"),ctx);
+ const p={x:0,z:0};ctx.slide(p,1.5,0,.3);assert(p.x>1.4);
+ ctx.slide(p,2,0,.3);assert(p.x<2);
+ ctx.slide(p,-2,0,.3);assert(p.x>=1,"Desde fuera no se puede volver a entrar");
+}
+{ // No se baja del otro lado de un muro ni a velocidad.
+ const toasts=[],ctx={blocked:(x,z,r)=>x>1.0&&x<1.2,V:(x,y,z)=>({x,y,z}),roadSurface50:()=>0,driving:true,state:{speed:9},toast:m=>toasts.push(m)};
+ vm.createContext(ctx);vm.runInContext(read("0346-safe-vehicle-exit.js")+read("0347-change-drive.js"),ctx);
+ const v={width:1.8,heading:0,root:{position:{x:0,z:0}}};
+ assert(ctx.safeVehicleExit(v).x<0,"Debe usar el lado sin muro");
+ ctx.changeDrive();assert.equal(ctx.driving,true);assert.equal(toasts.length,1);
+}
+{ // Los peatones se apartan del vehículo del jugador.
+ const ctx=context([],[0,0]);ctx.state={x:0,z:0,heading:0,speed:6};ctx.gameplayTime=1;
+ const q={root:node(.2,-1)};ctx.pedestrians.push(q);
+ ctx.clearPedestriansV4({width:1.8,length:5,root:node(0,0)});
+ assert(Math.abs(q.root.position.x)>1.2);assert(q.fleeUntil>1);
+}
